@@ -1,5 +1,4 @@
 const express = require('express');
-//const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
@@ -12,9 +11,8 @@ const doesExist = (username) => {
   });
   if(userswithsamename.length > 0){
     return true;
-  } else {
-    return false;
-  }
+  } 
+  return false;
 };
 
 async function getBookByISBN(isbn) {
@@ -48,14 +46,14 @@ public_users.post("/register", (req,res) => {
       users.push({"username":username,"password":password});
       return res.status(200).json({message: "User successfully registered. Now you can login"});
     } else {
-      return res.status(404).json({message: "User already exists!"});    
+      return res.status(409).json({message: "User already exists!"});    
     }
   } else {
 	  if (!username || !password) {
-		  return res.status(404).json({message: "Username and/or password not provided. You can't register"});		  
+		  return res.status(400).json({message: "Username and/or password not provided. You can't register"});		  
 	  }
   }
-  return res.status(404).json({message: "Unable to register user."});
+  return res.status(500).json({message: "Unable to register user."});
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
@@ -66,13 +64,13 @@ public_users.get('/', function(req, res) {
 	let bookList = JSON.stringify(books, null, 4);
 	if (bookList) {
 		resolve(bookList);
-	} else {
-		reject("Cannot get book list");
-	}
+	} else
+	reject("Cannot get book list");
   });
-  allBooksPromise.then(successMessage => res.send(successMessage)).catch(errorMessage => res.send(errorMessage));
+  allBooksPromise.then(successMessage => res.status(200).json(successMessage)).catch(errorMessage => res.status(404).json({message: errorMessage}));
   //return res.status(300).json({message: "Yet to be implemented"});
 });
+
 /*
 // Get the book list available in the shop - sync version
 public_users.get('/', function(req, res) {
@@ -88,9 +86,9 @@ public_users.get('/isbn/:isbn', async function(req, res) {
   const isbn = req.params.isbn;
   try {
   	let bookWithISBN = await getBookByISBN(isbn);	
-	return res.send(bookWithISBN);
+	return res.status(200).json(bookWithISBN);
   } catch (error) {
-	return res.send(`Cannot find book with ISBN ${isbn}`);
+	return res.status(404).json({message: `Cannot find book with ISBN ${isbn}`});
   }
   //return res.status(300).json({message: "Yet to be implemented"});
  });
@@ -124,11 +122,10 @@ public_users.get('/author/:author', function(req, res) {
     });
     if (booksByAuthor.length > 0) {
             resolve(booksByAuthor);
-    } else {
- 	    reject(`Cannot find books by author ${author}`);
     }
+    reject(`Cannot find books by author ${author}`);
   });
-  booksByAuthorPromise.then(successMessage => res.send(successMessage)).catch(errorMessage => res.send(errorMessage));
+  booksByAuthorPromise.then(successMessage => res.status(200).json(successMessage)).catch(errorMessage => res.status(404).json({message: errorMessage}));
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
@@ -159,9 +156,9 @@ public_users.get('/title/:title', async function(req, res) {
   const title = req.params.title;
   try {
   	let booksByTitle = await getBooksByTitle(title);	
-	return res.send(booksByTitle);
+	return res.status(200).json(booksByTitle);
   } catch (error) {
- 	return res.send(`Cannot find books titled ${title}`);
+ 	return res.status(404).json({message:`Cannot find books titled ${title}`});
   }
   //return res.status(300).json({message: "Yet to be implemented"});
 });
@@ -195,12 +192,12 @@ public_users.get('/review/:isbn', function(req, res) {
   if (bookWithISBN) {
 	const reviews = bookWithISBN.reviews;
   	if (reviews) {
-		return res.send(reviews);
+		return res.status(200).json(reviews);
   	} else {
-		return res.send(`Cannot find review for the book with ISBN ${isbn}`);
+		return res.status(404).json({message: `Cannot find review for the book with ISBN ${isbn}`});
   	}
   } else {
-	return res.send(`Cannot find book with ISBN ${isbn}`);
+	return res.status(404).json({message: `Cannot find book with ISBN ${isbn}`});
   }
   //return res.status(300).json({message: "Yet to be implemented"});
 });

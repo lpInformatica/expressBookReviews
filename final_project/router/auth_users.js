@@ -47,7 +47,7 @@ regd_users.post("/login", (req, res) => {
     req.session.authorization = {
       accessToken, username
     }
-    return res.status(200).send("User successfully logged in");
+    return res.status(200).json({message: "User successfully logged in"});
   } else {
     return res.status(208).json({message: "Invalid Login. Check username and password"});
   }
@@ -64,14 +64,12 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
   if (bookWithISBN) { 
 	if (bookWithISBN.reviews[username]) { 
 		bookWithISBN.reviews[username] = review; 
-		return res.send(`Review successfully modified for book with ISBN ${isbn} and user ${username}`);
-	} else {
-		bookWithISBN.reviews[username] = review;
-		return res.send(`Review successfully added to the book with ISBN ${isbn}`);
+		return res.status(200).json({message: `Review successfully modified for book with ISBN ${isbn} and user ${username}`});
 	}
-  } else {
-	return res.send(`Cannot find book with ISBN ${isbn}`);
-  }
+	bookWithISBN.reviews[username] = review;
+	return res.status(200).json({message: `Review successfully added to the book with ISBN ${isbn}`});
+  } 
+  return res.status(404).json({message: `Cannot find book with ISBN ${isbn}`});
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
@@ -84,13 +82,11 @@ regd_users.delete("/auth/review/:isbn", (req, res) => {
   if (bookWithISBN) { 
 	if (bookWithISBN.reviews[username]) { 
 		delete bookWithISBN.reviews[username]; 
-		return res.send(`Review successfully removed for book with ISBN ${isbn} and user ${username}`);
-	} else {
-		return res.send(`Cannot find review for book with ISBN ${isbn} from user ${username}`);
+		return res.status(200).json({message: `Review successfully removed for book with ISBN ${isbn} and user ${username}`});
 	}
-  } else {
-	return res.send(`Cannot find book with ISBN ${isbn}`);
+	return res.status(404).json({message: `Cannot find review for book with ISBN ${isbn} from user ${username}`});
   }
+  return res.status(404).json({message: `Cannot find book with ISBN ${isbn}`});
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
