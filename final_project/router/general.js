@@ -1,11 +1,12 @@
 const express = require('express');
+//const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
 
-const doesExist = (username)=>{
+const doesExist = (username) => {
   let userswithsamename = users.filter((user)=>{
     return user.username === username
   });
@@ -14,7 +15,29 @@ const doesExist = (username)=>{
   } else {
     return false;
   }
-}
+};
+
+async function getBookByISBN(isbn) {
+  let bookWithISBN = books[isbn];	
+  if (bookWithISBN) {
+	  return bookWithISBN
+  }
+  return error;
+};
+
+async function getBooksByTitle(title) {
+  const titleKeys = Object.keys(books);
+  let booksByTitle = [];
+  titleKeys.forEach(key => {
+	  if (books[key].title === title) {
+		  booksByTitle.push(books[key]);
+	  }
+  });
+  if (booksByTitle.length > 0) {
+  	  return booksByTitle;
+  }
+  return error;
+};
 
 public_users.post("/register", (req,res) => {
   //Write your code here
@@ -36,14 +59,44 @@ public_users.post("/register", (req,res) => {
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
-// Get the book list available in the shop
-public_users.get('/', function (req, res) {
+// Get the book list available in the shop - Promise version
+public_users.get('/', function(req, res) {
+  //Write your code here
+  let allBooksPromise = new Promise((resolve, reject) => {
+	let bookList = JSON.stringify(books, null, 4);
+	if (bookList) {
+		resolve(bookList);
+	} else {
+		reject("Cannot get book list");
+	}
+  });
+  allBooksPromise.then(successMessage => res.send(successMessage)).catch(errorMessage => res.send(errorMessage));
+  //return res.status(300).json({message: "Yet to be implemented"});
+});
+/*
+// Get the book list available in the shop - sync version
+public_users.get('/', function(req, res) {
   //Write your code here
   return res.send(JSON.stringify(books, null, 4));
   //return res.status(300).json({message: "Yet to be implemented"});
 });
+*/
 
-// Get book details based on ISBN
+// Get book details based on ISBN - async-await version
+public_users.get('/isbn/:isbn', async function(req, res) {
+  //Write your code here
+  const isbn = req.params.isbn;
+  try {
+  	let bookWithISBN = await getBookByISBN(isbn);	
+	return res.send(bookWithISBN);
+  } catch (error) {
+	return res.send(`Cannot find book with ISBN ${isbn}`);
+  }
+  //return res.status(300).json({message: "Yet to be implemented"});
+ });
+
+// Get book details based on ISBN - sync version
+/*
 public_users.get('/isbn/:isbn', function (req, res) {
   //Write your code here
   const isbn = req.params.isbn;
@@ -54,48 +107,88 @@ public_users.get('/isbn/:isbn', function (req, res) {
 	return res.send(`Cannot find book with ISBN ${isbn}`);
   }
   //return res.status(300).json({message: "Yet to be implemented"});
- });
+});
+*/
   
-// Get book details based on author
-public_users.get('/author/:author', function (req, res) {
+// Get book details based on author - Promise version
+public_users.get('/author/:author', function(req, res) {
+  //Write your code here
+  const author = req.params.author;
+  let booksByAuthorPromise = new Promise((resolve, reject) => {
+    const authorKeys = Object.keys(books);
+    let booksByAuthor = [];
+    authorKeys.forEach(key => {
+      if (books[key].author === author) {
+	    booksByAuthor.push(books[key]);
+      }
+    });
+    if (booksByAuthor.length > 0) {
+            resolve(booksByAuthor);
+    } else {
+ 	    reject(`Cannot find books by author ${author}`);
+    }
+  });
+  booksByAuthorPromise.then(successMessage => res.send(successMessage)).catch(errorMessage => res.send(errorMessage));
+  //return res.status(300).json({message: "Yet to be implemented"});
+});
+
+/*
+// Get book details based on author - sync version
+public_users.get('/author/:author', function(req, res) {
   //Write your code here
   const author = req.params.author;
   const authorKeys = Object.keys(books);
-  let authorFound = [];
+  let booksByAuthor = [];
   authorKeys.forEach(key => {
 	  if (books[key].author === author) {
-		  authorFound.push(books[key]);
+		  booksByAuthor.push(books[key]);
 	  }
   });
-  if (authorFound.length > 0) {
-	  return res.send(authorFound);
+  if (booksByAuthor.length > 0) {
+	  return res.send(booksByAuhtor);
   } else {
  	  return res.send(`Cannot find books by author ${author}`);
   }
   //return res.status(300).json({message: "Yet to be implemented"});
 });
+*/
 
-// Get all books based on title
-public_users.get('/title/:title', function (req, res) {
+// Get all books based on title - async-await version
+public_users.get('/title/:title', async function(req, res) {
+  //Write your code here
+  const title = req.params.title;
+  try {
+  	let booksByTitle = await getBooksByTitle(title);	
+	return res.send(booksByTitle);
+  } catch (error) {
+ 	return res.send(`Cannot find books titled ${title}`);
+  }
+  //return res.status(300).json({message: "Yet to be implemented"});
+});
+
+/*
+// Get all books based on title - sync version
+public_users.get('/title/:title', function(req, res) {
   //Write your code here
   const title = req.params.title;
   const titleKeys = Object.keys(books);
-  let titleFound = [];
+  let booksByTitle = [];
   titleKeys.forEach(key => {
 	  if (books[key].title === title) {
-		  titleFound.push(books[key]);
+		  booksByTitle.push(books[key]);
 	  }
   });
-  if (titleFound.length > 0) {
-	  return res.send(titleFound);
+  if (booksByTitle.length > 0) {
+	  return res.send(booksByTitle);
   } else {
  	  return res.send(`Cannot find books titled ${title}`);
   }
   //return res.status(300).json({message: "Yet to be implemented"});
 });
+*/
 
 //  Get book review
-public_users.get('/review/:isbn', function (req, res) {
+public_users.get('/review/:isbn', function(req, res) {
   //Write your code here
   const isbn = req.params.isbn;
   const bookWithISBN = books[isbn];
